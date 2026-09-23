@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "built": "2026-09-23",
+  "count": 370105,
+  "vectors": {
+    "count": 204001,
+    "dim": 128
+  },
+  "meta": [
+    [
+      "flags",
+      "u16"
+    ],
+    [
+      "zipf10",
+      "u8"
+    ],
+    [
+      "syllables",
+      "u8"
+    ],
+    [
+      "pos",
+      "u8"
+    ]
+  ],
+  "pos": {
+    "n": 1,
+    "v": 2,
+    "a": 4,
+    "r": 8
+  },
+  "flags": {
+    "def": 1,
+    "vec": 2,
+    "proper": 4,
+    "abbr": 8,
+    "infl": 16,
+    "pron": 32,
+    "variant": 64,
+    "taxon": 128,
+    "archaic": 256,
+    "sensitive": 512,
+    "negated": 1024,
+    "defvec": 2048
+  },
+  "phonemes": {
+    "vowels": {
+      "A": "AA",
+      "B": "AE",
+      "C": "AH",
+      "D": "AO",
+      "E": "AW",
+      "F": "AY",
+      "G": "EH",
+      "H": "ER",
+      "I": "EY",
+      "J": "IH",
+      "K": "IY",
+      "L": "OW",
+      "M": "OY",
+      "N": "UH",
+      "O": "UW"
+    },
+    "consonants": {
+      "a": "B",
+      "b": "CH",
+      "c": "D",
+      "d": "DH",
+      "e": "F",
+      "f": "G",
+      "g": "HH",
+      "h": "JH",
+      "i": "K",
+      "j": "L",
+      "k": "M",
+      "l": "N",
+      "m": "NG",
+      "n": "P",
+      "o": "R",
+      "p": "S",
+      "q": "SH",
+      "r": "T",
+      "s": "TH",
+      "t": "V",
+      "u": "W",
+      "v": "Y",
+      "w": "Z",
+      "x": "ZH"
+    }
+  },
+  "sources": [
+    "english-words (dwyl, Unlicense)",
+    "WordNet 3.0 (Princeton)",
+    "CMU Pronouncing Dictionary",
+    "wordfreq (Speer)",
+    "GloVe 6B 300d (Pennington et al.)",
+    "English Wiktionary (CC BY-SA 4.0, via cstr/en-wiktionary-sqlite-full)"
+  ]
+}

@@ -1,0 +1,5 @@
+# Python build environment and downloaded sources (~1.4 GB; `make data` fetches them)
+.venv/
+data/cache/
+__pycache__/
+.DS_Store

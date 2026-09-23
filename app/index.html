@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="Explore 370,105 English words: filter, compare, find neighbours in meaning, sound and form, and keep shortlists.">
+  <title>Wordable</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23111'/%3E%3Ctext x='16' y='22.5' font-family='Helvetica,Arial' font-size='18' font-weight='700' fill='%23fff' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="modulepreload" href="js/main.js">
+  <link rel="preload" href="data/words.txt" as="fetch" crossorigin>
+  <link rel="preload" href="data/meta.bin" as="fetch" crossorigin>
+  <script>
+    // theme before first paint: "system" follows prefers-color-scheme through CSS
+    try { const t = localStorage.getItem('wordable.theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t } catch {}
+  </script>
+</head>
+<body>
+  <a class="skip" href="#results">Skip to words</a>
+
+  <header class="top">
+    <a class="brand" href="#/" aria-label="Wordable home">Wordable</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#/" data-route="explore">Explore</a>
+      <a href="#/cloud" data-route="cloud">Cloud</a>
+      <a href="#/lists" data-route="lists">Lists <span class="count" id="nav-lists-count"></span></a>
+    </nav>
+    <div class="search" role="search">
+      <label class="visually-hidden" for="q">Search words</label>
+      <input id="q" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search words" enterkeyhint="search">
+      <div class="seg seg-small" id="qm" role="radiogroup" aria-label="Match">
+        <button role="radio" data-v="starts" title="Starts with">Starts</button>
+        <button role="radio" data-v="contains" title="Contains">Has</button>
+        <button role="radio" data-v="ends" title="Ends with">Ends</button>
+        <button role="radio" data-v="defs" title="Search inside definitions">Defs</button>
+      </div>
+      <kbd class="hint-key" aria-hidden="true">/</kbd>
+    </div>
+    <div class="top-right">
+      <button class="link" id="saving-to" title="Words you save go to this list (S)"></button>
+      <button class="link" id="theme" title="Theme"></button>
+      <button class="link" id="help-btn" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
+    </div>
+  </header>
+
+  <div class="app" id="app" data-route="explore">
+    <main class="main" id="main">
+      <section class="filters" id="filters" aria-label="Filters"></section>
+      <section class="view" id="view-explore" aria-label="Words"></section>
+      <section class="view" id="view-cloud" aria-label="Cloud" hidden></section>
+      <section class="view" id="view-lists" aria-label="Lists" hidden></section>
+    </main>
+    <aside class="detail" id="detail" aria-label="Word details" aria-live="polite"></aside>
+  </div>
+
+  <div class="boot" id="boot" role="status">
+    <div class="boot-inner">
+      <div class="boot-title">Wordable</div>
+      <div class="boot-line"><span>Lexicon</span><i></i><span id="boot-status">loading</span></div>
+    </div>
+  </div>
+
+  <div popover id="pop-saving" class="pop"></div>
+  <div popover id="pop-toast" class="toast" role="status"></div>
+
+  <dialog id="help" class="dialog">
+    <form method="dialog">
+      <header class="dialog-head"><h2>Shortcuts</h2><button class="link" value="close" aria-label="Close">Close</button></header>
+      <dl class="keys">
+        <dt><kbd>/</kbd> or <kbd>⌘K</kbd></dt><dd>Search</dd>
+        <dt><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd></dt><dd>Move through words</dd>
+        <dt><kbd>Enter</kbd></dt><dd>Open word</dd>
+        <dt><kbd>S</kbd></dt><dd>Save / unsave to current list</dd>
+        <dt>Double-click</dt><dd>Save / unsave a word</dd>
+        <dt><kbd>C</kbd></dt><dd>Open a cloud around the word</dd>
+        <dt><kbd>+</kbd> <kbd>−</kbd></dt><dd>Add word to cloud seeds / as a negative seed</dd>
+        <dt><kbd>R</kbd></dt><dd>Random word from current results</dd>
+        <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Previous / next word in history</dd>
+        <dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></dt><dd>Explore · Cloud · Lists</dd>
+        <dt><kbd>G</kbd> <kbd>V</kbd></dt><dd>Cycle grouping · cycle view</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Close panel / clear search</dd>
+      </dl>
+      <p class="fine">Search syntax — <code>lu*</code> wildcard, <code>?</code> any one letter, <code>/^[aeiou].{4}$/</code> regular expression.</p>
+      <p class="fine">Data — word list: dwyl/english-words (Unlicense) · definitions &amp; thesaurus: Princeton WordNet 3.0 and English Wiktionary (CC BY-SA 4.0) · pronunciation: CMU Pronouncing Dictionary · frequency: wordfreq · meaning space: GloVe (Stanford NLP).</p>
+    </form>
+  </dialog>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
