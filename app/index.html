@@ -32,9 +32,7 @@
       <label class="visually-hidden" for="q">Search words</label>
       <input id="q" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search words" enterkeyhint="search">
       <div class="seg seg-small" id="qm" role="radiogroup" aria-label="Match">
-        <button role="radio" data-v="starts" title="Starts with">Starts</button>
-        <button role="radio" data-v="contains" title="Contains">Has</button>
-        <button role="radio" data-v="ends" title="Ends with">Ends</button>
+        <button role="radio" data-v="starts" title="Search spellings (starts with; * and ? wildcards)">Words</button>
         <button role="radio" data-v="defs" title="Search inside definitions">Defs</button>
       </div>
       <kbd class="hint-key" aria-hidden="true">/</kbd>
@@ -83,7 +81,7 @@
         <dt><kbd>G</kbd> <kbd>V</kbd></dt><dd>Cycle grouping · cycle view</dd>
         <dt><kbd>Esc</kbd></dt><dd>Close panel / clear search</dd>
       </dl>
-      <p class="fine">Search syntax — <code>lu*</code> wildcard, <code>?</code> any one letter, <code>/^[aeiou].{4}$/</code> regular expression.</p>
+      <p class="fine">Search syntax — <code>lu*</code> wildcard, <code>?</code> any one letter, <code>/^[aeiou].{4}$/</code> regular expression. Starts / contains / ends live under the Letters filter and definition terms under Meaning; both stack with the search box.</p>
       <p class="fine">Data — word list: dwyl/english-words (Unlicense) · definitions &amp; thesaurus: Princeton WordNet 3.0 and English Wiktionary (CC BY-SA 4.0) · pronunciation: CMU Pronouncing Dictionary · frequency: wordfreq · meaning space: GloVe (Stanford NLP).</p>
     </form>
   </dialog>

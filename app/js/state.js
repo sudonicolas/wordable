@@ -14,6 +14,10 @@ export const DEFAULTS = Object.freeze({
   pos: 0,
   inc: '',
   exc: '',
+  pre: '',
+  mid: '',
+  suf: '',
+  dq: '',
   hide: 0,
   need: 0,
   shape: 0,
@@ -33,7 +37,7 @@ export const DEFAULTS = Object.freeze({
   list: ''
 })
 
-export const FILTER_KEYS = ['q', 'qm', 'len', 'syl', 'zipf', 'pos', 'inc', 'exc', 'hide', 'need', 'shape', 'shapeNot', 'saved']
+export const FILTER_KEYS = ['q', 'qm', 'len', 'syl', 'zipf', 'pos', 'inc', 'exc', 'pre', 'mid', 'suf', 'dq', 'hide', 'need', 'shape', 'shapeNot', 'saved']
 
 export const SHAPE = { double: 1, isogram: 2, palindrome: 4, pronounceable: 8, vowelStart: 16, vowelEnd: 32 }
 
@@ -61,6 +65,10 @@ const CODECS = {
   pos: { enc: m => Object.keys(posNames).filter(k => m & posNames[k]).join(''), dec: s => [...s].reduce((m, c) => m | (posNames[c] || 0), 0) },
   inc: str,
   exc: str,
+  pre: str,
+  mid: str,
+  suf: str,
+  dq: str,
   hide: maskCodec(flagNames, F),
   need: maskCodec(flagNames, F),
   shape: maskCodec(shapeNames, SHAPE),
@@ -114,6 +122,13 @@ export function fromHash (hash) {
     const d = c.dec(v)
     if (d !== null && d !== undefined) s[k] = d
   }
+  // older links searched "contains"/"ends" from the box; those now live in the Letters filter
+  if ((s.qm === 'contains' || s.qm === 'ends') && !/[*?/]/.test(s.q)) {
+    const part = s.q.toLowerCase().replace(/[^a-z]/g, '')
+    if (part) s[s.qm === 'ends' ? 'suf' : 'mid'] = part
+    s.q = ''
+    s.qm = 'starts'
+  } else if (s.qm !== 'defs') s.qm = 'starts'
   return s
 }
 

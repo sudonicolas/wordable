@@ -99,11 +99,17 @@ const CELLS = [
   { id: 'syl', label: 'Syllables', value: s => rangeText(s.syl, LIMITS.syl), on: s => rangeText(s.syl, LIMITS.syl) !== 'any', edit: editRange('syl', 'Syllables', LIMITS.syl, [['1', [1, 1]], ['2', [2, 2]], ['3', [3, 3]], ['≤ 2', [1, 2]], ['≤ 3', [1, 3]], ['Any', LIMITS.syl]]) },
   { id: 'zipf', label: 'Frequency', value: s => freqText(s.zipf), on: s => freqText(s.zipf) !== 'any', edit: editFreq },
   { id: 'pos', label: 'Type', value: s => (s.pos ? POS_OPTS.filter(o => s.pos & o[0]).map(o => o[1].slice(0, 4).toLowerCase() + '.').join(' ') : 'any'), on: s => !!s.pos, edit: editPos },
-  { id: 'letters', label: 'Letters', value: s => [s.inc && `+${s.inc}`, s.exc && `−${s.exc}`].filter(Boolean).join(' ') || 'any', on: s => !!(s.inc || s.exc), edit: editLetters },
+  { id: 'letters', label: 'Letters', value: lettersText, on: s => !!(s.pre || s.mid || s.suf || s.inc || s.exc), edit: editLetters },
+  { id: 'meaning', label: 'Meaning', value: s => (s.dq.trim() ? `“${s.dq.trim()}”` : 'any'), on: s => !!s.dq.trim(), edit: editMeaning },
   { id: 'shape', label: 'Shape', value: s => { const n = popcount(s.shape) + popcount(s.shapeNot); return n ? (n === 1 ? shapeName(s) : `${n} rules`) : 'any' }, on: s => !!(s.shape || s.shapeNot), edit: editShape },
   { id: 'clean', label: 'Hide', value: s => { const n = popcount(s.hide) + popcount(s.need); return n ? `${n} rule${n > 1 ? 's' : ''}` : 'nothing' }, on: s => !!(s.hide || s.need), edit: editClean },
   { id: 'saved', label: 'Saved', value: s => ({ any: 'any', only: 'only saved', hide: 'hide saved' })[s.saved] || 'any', on: s => s.saved !== 'any', edit: editSaved }
 ]
+
+function lettersText (s) {
+  const mids = s.mid.split(/[^a-z]+/).filter(Boolean)
+  return [s.pre && `${s.pre}…`, ...mids.map(m => `…${m}…`), s.suf && `…${s.suf}`, s.inc && `+${s.inc}`, s.exc && `−${s.exc}`].filter(Boolean).join(' ') || 'any'
+}
 
 function popcount (m) { let n = 0; while (m) { n += m & 1; m >>>= 1 } return n }
 function shapeName (s) {
@@ -203,14 +209,34 @@ function editPos (p) {
 
 function editLetters (p) {
   const s = store.get()
+  const part = (key, placeholder, clean) => {
+    const el = h('input', { class: 'field mono', value: s[key], name: key, placeholder, autocomplete: 'off', spellcheck: 'false' })
+    el.addEventListener('input', () => store.set({ [key]: clean(el.value) }))
+    return el
+  }
+  const word = v => v.toLowerCase().replace(/[^a-z]/g, '')
+  const words = v => v.toLowerCase().replace(/[^a-z]+/g, ' ').replace(/^ /, '')
   const inc = h('input', { class: 'field mono', value: s.inc, name: 'inc', placeholder: 'e.g. xz', autocomplete: 'off', spellcheck: 'false' })
   const exc = h('input', { class: 'field mono', value: s.exc, name: 'exc', placeholder: 'e.g. qj', autocomplete: 'off', spellcheck: 'false' })
   const clean = v => [...new Set(v.toLowerCase().replace(/[^a-z]/g, ''))].join('')
   inc.addEventListener('input', () => store.set({ inc: clean(inc.value) }))
   exc.addEventListener('input', () => store.set({ exc: clean(exc.value) }))
   fill(p,
-    h('h3', null, 'Must contain all of'), inc,
+    h('h3', null, 'Starts with'), part('pre', 'e.g. fr', word),
+    h('h3', { style: { marginTop: '14px' } }, 'Contains'), part('mid', 'e.g. ui — space for several', words),
+    h('h3', { style: { marginTop: '14px' } }, 'Ends with'), part('suf', 'e.g. ous', word),
+    h('hr', { class: 'rule' }),
+    h('h3', null, 'Must contain all of these letters'), inc,
     h('h3', { style: { marginTop: '14px' } }, 'Must not contain any of'), exc
+  )
+}
+
+function editMeaning (p) {
+  const dq = h('input', { class: 'field', value: store.get().dq, name: 'dq', placeholder: 'e.g. sweet fruit', autocomplete: 'off', spellcheck: 'false' })
+  dq.addEventListener('input', () => store.set({ dq: dq.value }))
+  fill(p,
+    h('h3', null, 'Definition mentions'), dq,
+    h('p', { class: 'fine', style: { marginTop: '10px', lineHeight: '1.6' } }, 'Every word you type must appear in the definition. Stacks with the search box and the other filters.')
   )
 }
 

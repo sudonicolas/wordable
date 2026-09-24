@@ -33,7 +33,7 @@ export function mountCloud (el) {
   store.subscribe((s, ch) => {
     if (s.route !== 'cloud') return
     if (ch.has('route') || ch.has('seeds') || ch.has('modes') || ch.has('bias') || ch.has('limit') || ch.has('layout')) renderHead()
-    if (ch.has('route') || ['seeds', 'modes', 'bias', 'limit', 'layout', 'len', 'syl', 'zipf', 'pos', 'inc', 'exc', 'hide', 'need', 'shape', 'shapeNot', 'saved'].some(k => ch.has(k))) run()
+    if (ch.has('route') || ['seeds', 'modes', 'bias', 'limit', 'layout', 'len', 'syl', 'zipf', 'pos', 'inc', 'exc', 'pre', 'mid', 'suf', 'dq', 'hide', 'need', 'shape', 'shapeNot', 'saved'].some(k => ch.has(k))) run()
     else if (ch.has('w')) markSelected()
   })
   lists.subscribe(() => { if (store.get().route === 'cloud') markSaved() })
