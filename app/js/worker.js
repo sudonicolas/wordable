@@ -110,11 +110,7 @@ function compileQuery (q, qm) {
   if (q.length > 2 && q.startsWith('/') && q.endsWith('/')) {
     try { const re = new RegExp(q.slice(1, -1), 'i'); return { kind: 'regex', test: w => re.test(w) } } catch { return { kind: 'bad' } }
   }
-  if (qm === 'defs') {
-    const toks = q.split(/[^a-z]+/).filter(t => t.length > 1)
-    if (!toks.length) return null
-    return { kind: 'defs', toks, res: toks.map(t => new RegExp('\\b' + t)) }
-  }
+  if (qm === 'defs') return compileDefs(q)
   if (/[*?]/.test(q)) {
     const body = q.replace(/[^a-z*?]/g, '').replace(/\*+/g, '*').split('').map(c => c === '*' ? '.*' : c === '?' ? '.' : c).join('')
     const re = new RegExp('^' + body + '$')
@@ -122,10 +118,23 @@ function compileQuery (q, qm) {
   }
   const s = q.replace(/[^a-z]/g, '')
   if (!s) return null
-  if (qm === 'contains') return { kind: 'contains', s, test: w => w.includes(s) }
-  if (qm === 'ends') return { kind: 'ends', s, test: w => w.endsWith(s) }
   return { kind: 'starts', s }
 }
+
+// Every term must start a word somewhere in the glosses ("fruit" matches "fruits", "fruity", not "grapefruit").
+function compileDefs (q) {
+  const toks = (q || '').toLowerCase().split(/[^a-z]+/).filter(t => t.length > 1)
+  if (!toks.length) return null
+  return { kind: 'defs', toks, res: toks.map(t => new RegExp('\\b' + t)) }
+}
+
+function defsMatch (g, cd) {
+  if (!g) return false
+  for (const re of cd.res) if (!re.test(g)) return false
+  return true
+}
+
+const letters = s => (s || '').toLowerCase().replace(/[^a-z]/g, '')
 
 function lowerBound (s) {
   let lo = 0
@@ -142,7 +151,7 @@ function lettersToMask (s) {
 
 // Everything except the text query: used by explore, and on its own by related/cloud.
 function baseMask (f) {
-  const key = JSON.stringify([f.len, f.syl, f.zipf, f.pos, f.inc, f.exc, f.hide, f.need, f.shape, f.shapeNot, f.saved, f.savedKey])
+  const key = JSON.stringify([f.len, f.syl, f.zipf, f.pos, f.inc, f.exc, f.pre, f.mid, f.suf, f.dq, f.hide, f.need, f.shape, f.shapeNot, f.saved, f.savedKey])
   if (maskCache.key === key) return maskCache.mask
   const mask = new Uint8Array(N)
   const [l0, l1] = f.len || [1, 99]
@@ -155,6 +164,11 @@ function baseMask (f) {
   const need = f.need | 0
   const shp = f.shape | 0
   const shpNot = f.shapeNot | 0
+  const pre = letters(f.pre)
+  const suf = letters(f.suf)
+  const mids = (f.mid || '').toLowerCase().split(/[^a-z]+/).filter(Boolean)
+  const dq = compileDefs(f.dq)
+  if (dq && !glosses) throw new Error('baseMask: definitions not loaded') // callers await needGlosses(f)
   let saved = null
   if (f.saved === 'only' || f.saved === 'hide') {
     saved = new Uint8Array(N)
@@ -176,14 +190,23 @@ function baseMask (f) {
     const sh = shape[i]
     if ((sh & shp) !== shp || (sh & shpNot)) continue
     if (saved && (f.saved === 'only') !== (saved[i] === 1)) continue
+    const w = words[i]
+    if (pre && !w.startsWith(pre)) continue
+    if (suf && !w.endsWith(suf)) continue
+    if (mids.length && !mids.every(m => w.includes(m))) continue
+    if (dq && !defsMatch(glosses[i], dq)) continue
     mask[i] = 1
   }
   maskCache = { key, mask }
   return mask
 }
 
+// definition filters need every shard's glosses before the mask can be built
+async function needGlosses (f) { if (f && compileDefs(f.dq)) await loadGlosses() }
+
 async function query (f) {
   const t0 = performance.now()
+  await needGlosses(f)
   const mask = baseMask(f)
   const cq = compileQuery(f.q, f.qm)
   let out = new Uint32Array(N)
@@ -200,10 +223,7 @@ async function query (f) {
     for (let i = 0; i < N; i++) {
       if (!mask[i]) continue
       const g = glosses[i]
-      if (!g) continue
-      let ok = true
-      for (const re of cq.res) if (!re.test(g)) { ok = false; break }
-      if (!ok) continue
+      if (!defsMatch(g, cq)) continue
       out[n++] = i
       relevance[i] = defRelevance(g, cq, zipf[i])
     }
@@ -217,8 +237,9 @@ async function query (f) {
   let sort = f.sort || 'az'
   if (sort === 'best' && !relevance) {
     relevance = new Float32Array(N)
+    const dq = compileDefs(f.dq)
     const s = cq?.s || ''
-    for (const i of out) relevance[i] = (words[i] === s ? 1000 : 0) + zipf[i] * 3 - lens[i]
+    for (const i of out) relevance[i] = dq ? defRelevance(glosses[i], dq, zipf[i]) : (words[i] === s ? 1000 : 0) + zipf[i] * 3 - lens[i]
   }
   out = sortIds(out, sort, f.seed | 0, relevance)
   const groups = f.group && f.group !== 'none' ? groupIds(out, f.group) : null
@@ -265,7 +286,8 @@ function sortIds (ids, sort, seed, relevance) {
       case 'long': p = 99 - lens[i]; break
       case 'syl': p = syl[i] * 100 + lens[i]; break
       case 'ending': p = revRank[i]; break
-      case 'best': p = 1e6 - relevance[i] * 10; break
+      // relevance is fractional: quantise to a non-negative integer, or its fraction bleeds into the id bits
+      case 'best': p = Math.max(0, Math.round((1e4 - relevance[i]) * 1000)); break
       default: p = 0
     }
     key[k] = p * SH + i
@@ -674,6 +696,7 @@ function seedEcho (seedWords) {
 
 async function cloud ({ seeds, modes, bias = 0, limit = 150, filter, cluster }) {
   const t0 = performance.now()
+  await needGlosses(filter)
   const mask = baseMask(filter || {})
   seeds = seeds.filter(s => s.id >= 0 && s.id < N)
   if (!seeds.length) return { items: [], took: 0 }
@@ -832,6 +855,7 @@ function makeBlends (list) {
 // ------------------------------------------------------------------ related (detail panel)
 
 async function related ({ id, filter }) {
+  await needGlosses(filter)
   const mask = baseMask(filter || {})
   const w = words[id]
   const seeds = [{ id, sign: 1 }]

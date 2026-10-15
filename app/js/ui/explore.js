@@ -1,7 +1,7 @@
 // Explore: every word, virtualised. Grid (dense columns), List (receipt rows with definitions), Type (specimens).
 // Rows are absolutely positioned and recycled, so 370k words scroll like 30.
 
-import { store, filterOf, activeFilterCount } from '../state.js'
+import { store, filterOf, activeFilterCount, FILTER_KEYS } from '../state.js'
 import { lex, idOf, firstGloss, onShard, metaLine, fmt, band, posShort } from '../lexicon.js'
 import { latest, STALE, onProgress } from '../engine.js'
 import { lists } from '../lists.js'
@@ -69,7 +69,7 @@ export function mountExplore (el) {
   }).observe(pane)
 
   store.subscribe((s, ch) => {
-    if (['q', 'qm', 'len', 'syl', 'zipf', 'pos', 'inc', 'exc', 'hide', 'need', 'shape', 'shapeNot', 'saved', 'sort', 'group', 'seed'].some(k => ch.has(k))) runQuery(true)
+    if ([...FILTER_KEYS, 'sort', 'group', 'seed'].some(k => ch.has(k))) runQuery(true)
     if (ch.has('view') || ch.has('size')) { renderBar(bar); relayout(false) }
     if (ch.has('sort') || ch.has('group')) renderBar(bar)
     if (ch.has('w')) { syncCursorToWord(); repaint() }
@@ -126,7 +126,7 @@ async function runQuery (resetScroll) {
     f.savedIds = [...lists.saved()].map(idOf).filter(i => i >= 0)
     f.savedKey = f.savedIds.join(',')
   }
-  if (s.qm === 'defs' && s.q.trim()) setStatus('Searching definitions')
+  if ((s.qm === 'defs' && s.q.trim()) || s.dq.trim()) setStatus('Searching definitions')
   const res = await latest('explore', 'query', f)
   if (res === STALE) return
   explore.ids = res.ids
@@ -149,7 +149,7 @@ function renderEmpty () {
   const filters = activeFilterCount(s)
   fill(emptyEl,
     h('strong', null, 'No words match.'),
-    s.q ? h('div', null, `Search “${s.q}” · ${s.qm === 'defs' ? 'in definitions' : s.qm}`) : null,
+    s.q ? h('div', null, `Search “${s.q}” · ${s.qm === 'defs' ? 'in definitions' : 'in words'}`) : null,
     filters ? h('div', null, `${filters} filter${filters > 1 ? 's' : ''} active`) : null,
     filters ? h('button', { class: 'btn', onclick: () => store.resetFilters() }, 'Clear filters') : null
   )

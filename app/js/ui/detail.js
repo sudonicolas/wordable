@@ -32,7 +32,7 @@ export function mountDetail (el) {
   root.addEventListener('click', onClick)
   root.addEventListener('dblclick', onDblClick)
   store.subscribe((s, ch) => {
-    if (ch.has('w')) { expanded = false; render() } else if (['len', 'syl', 'zipf', 'pos', 'inc', 'exc', 'hide', 'need', 'shape', 'shapeNot', 'saved'].some(k => ch.has(k))) renderNeighbours()
+    if (ch.has('w')) { expanded = false; render() } else if (['len', 'syl', 'zipf', 'pos', 'inc', 'exc', 'pre', 'mid', 'suf', 'dq', 'hide', 'need', 'shape', 'shapeNot', 'saved'].some(k => ch.has(k))) renderNeighbours()
   })
   lists.subscribe(() => { if (store.get().w) { renderActions(); renderNotes(); markSaved() } })
   render()
